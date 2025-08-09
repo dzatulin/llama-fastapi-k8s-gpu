@@ -48,7 +48,7 @@ spec:
             - name: model-volume
               mountPath: /app/models
       containers:
-        - name: mechat-ai
+        - name: chat-ai
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:

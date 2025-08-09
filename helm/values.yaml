@@ -1,7 +1,7 @@
 nodegroup: llm-workers
 
 image:
-  repository: myregistry/mechat-ai
+  repository: myregistry/chat-ai
   tag: 1.157
   pullPolicy: IfNotPresent
 
