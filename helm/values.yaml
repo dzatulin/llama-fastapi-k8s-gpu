@@ -1,0 +1,23 @@
+nodegroup: llm-workers
+
+image:
+  repository: myregistry/mechat-ai
+  tag: 1.157
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: aichat.dev.mydomain.com
+
+namespace: prod-chat-ai-ns
+replicaCount: 4
+
+resources:
+  memory:
+    request: "2Gi"
+  cpu:
+    request: "1"

@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-app
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Release.Name }}-app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-app
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-app
+    spec:
+      nodeSelector:
+        vke.vultr.com/node-pool: {{ .Values.nodegroup }}
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      imagePullSecrets:
+        - name: {{ .Chart.Name }}-registry
+      initContainers:
+        - name: init-s3-copy
+          image: amazon/aws-cli:2.13.17
+          command: ["sh", "-c"]
+          args:
+            - |
+              aws s3 cp s3://ai-models/Llama-3-8B-Instruct-Q4_K_M.gguf /app/models/ &&
+              echo "Model downloaded successfully"
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret_access_key
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+          volumeMounts:
+            - name: model-volume
+              mountPath: /app/models
+      containers:
+        - name: mechat-ai
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: {{ .Values.resources.memory.request }}
+              cpu: {{ .Values.resources.cpu.request }}
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret_access_key
+          volumeMounts:
+            - name: model-volume
+              mountPath: /app/models
+      volumes:
+        - name: model-volume
+          emptyDir: {}
